@@ -5,7 +5,8 @@ import cors from "cors";
 
 const app = express();  
 const PORT = 3000;  
-const mongoURI = "mongodb://127.0.0.1:27017/passwordManager";  
+//const mongoURI = "mongodb://127.0.0.1:27017/passwordManager";  
+const mongoURI = process.env.MONGO_URI;  
 
 app.use(cors());  
 app.use(express.json()); 

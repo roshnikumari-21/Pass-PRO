@@ -1,7 +1,7 @@
 
 import React from "react";  
 import { Link } from "react-router-dom";  
-import { useAuth0 } from "@auth0/auth0-react";  
+import { useAuth0, User } from "@auth0/auth0-react";  
 
 function Home() {  
   const { loginWithRedirect, isAuthenticated } = useAuth0();  
@@ -28,6 +28,7 @@ function Home() {
                 {isAuthenticated ? (  
                   <Link to="/manager">  
                     <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded transition duration-200 ease-in-out">  
+                      
                       Store Now  
                     </button>  
                   </Link>  
