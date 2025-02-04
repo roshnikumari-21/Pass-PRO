@@ -12,7 +12,7 @@ const Manager = () => {
   // Fetch passwords from MongoDB  
   const getPasswords = async () => {  
     try {  
-      const response = await fetch("http://localhost:3000/api/passwords");  
+      const response = await fetch("https://passwordpro-eight.vercel.app/api/passwords");  
       const passwords = await response.json();  
       console.log("Fetched passwords:", passwords);  
       setPasswordArray(passwords);  
@@ -44,7 +44,7 @@ const Manager = () => {
       return;  
     }  
 
-    const response = await fetch("http://localhost:3000/api/passwords", {  
+    const response = await fetch("https://passwordpro-eight.vercel.app/api/passwords", {  
       method: "POST",  
       headers: { "Content-Type": "application/json" },  
       body: JSON.stringify(form),  
@@ -67,7 +67,7 @@ const Manager = () => {
     }  
 
     try {  
-      const response = await fetch(`http://localhost:3000/api/passwords/${_id}`, {  
+      const response = await fetch(`https://passwordpro-eight.vercel.app/api/passwords/${_id}`, {  
         method: "DELETE",  
       });  
 
