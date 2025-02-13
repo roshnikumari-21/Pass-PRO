@@ -1,233 +1,162 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { ToastContainer, toast } from "react-toastify";
-import { v4 as uuidv4 } from "uuid";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+import { FaLock, FaUser, FaEye, FaEyeSlash,FaTrash, FaClipboard, } from "react-icons/fa";
+
+
+// API URL
+const API_URL = `${import.meta.env.VITE_API_URL}/api/passwords` || "http://localhost:3000/api/passwords";
 
 const Manager = () => {
-  const ref = useRef();
   const [form, setForm] = useState({ site: "", username: "", password: "" });
-  const [showPassword, setShowPassword] = useState(false);
   const [passwordArray, setPasswordArray] = useState([]);
-
-  // Fetch passwords from MongoDB
-  const getPasswords = async () => {
-    try {
-      const response = await fetch(
-        "https://passwordpro-eight.vercel.app/api/passwords"
-      );
-      const passwords = await response.json();
-      console.log("Fetched passwords:", passwords);
-      setPasswordArray(passwords);
-    } catch (error) {
-      console.error("Error fetching passwords:", error);
-    }
-  };
+  const [visiblePasswords, setVisiblePasswords] = useState({});
+  const ref = useRef(null);
 
   useEffect(() => {
     getPasswords();
   }, []);
 
-  const notify = (message) => toast(message);
+  const notify = (msg, type = "success") => toast[type](msg);
 
-  const copyText = (text) => {
-    navigator.clipboard.writeText(text);
-    notify("Password copied to clipboard");
+  const getPasswords = async () => {
+    try {
+      const response = await axios.get(API_URL);
+      setPasswordArray(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching passwords:", error);
+      setPasswordArray([]);
+      notify("Failed to load passwords. Check your connection.", "error");
+    }
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-    ref.current.type = showPassword ? "password" : "text";
-  };
-
-  // Save Password to MongoDB
   const savePassword = async () => {
     if (!form.site || !form.username || !form.password) {
-      notify("Please fill all the fields");
-      return;
-    }
-
-    const response = await fetch(
-      "https://passwordpro-eight.vercel.app/api/passwords",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      }
-    );
-
-    const data = await response.json();
-    if (response.ok) {
-      setPasswordArray([...passwordArray, { ...form, _id: data.data._id }]);
-      setForm({ site: "", username: "", password: "" }); // Clear the form after saving
-      notify("Password saved successfully");
-    } else {
-      notify("Failed to save password");
-    }
-  };
-
-  // Delete Password from MongoDB
-  const deletePassword = async (_id) => {
-    if (!window.confirm("Are you sure you want to delete this password?")) {
+      notify("Please fill all fields", "error");
       return;
     }
 
     try {
-      const response = await fetch(
-        `https://passwordpro-eight.vercel.app/api/passwords/${_id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (response.ok) {
-        setPasswordArray(passwordArray.filter((item) => item._id !== _id));
-        notify("Password deleted successfully");
-      } else {
-        const errorData = await response.json();
-        console.error("Delete error:", errorData);
-        notify("Failed to delete password");
-      }
+      const response = await axios.post(API_URL, form);
+      setPasswordArray([...passwordArray, response.data.data]);
+      setForm({ site: "", username: "", password: "" });
+      notify("Password saved successfully");
     } catch (error) {
-      console.error("Error deleting password:", error);
+      console.error("Error saving password:", error);
+      notify("Failed to save password", "error");
     }
   };
 
-  const editPassword = (id) => {
-    const selected = passwordArray.find((item) => item._id === id); // Use _id here
-    setForm(selected);
-    setPasswordArray(passwordArray.filter((item) => item._id !== id)); // Use _id for filtering
-    notify("Edit your password and click Save");
+  const deletePassword = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      setPasswordArray(passwordArray.filter((item) => item._id !== id));
+      notify("Password deleted successfully");
+    } catch (error) {
+      console.error("Error deleting password:", error);
+      notify("Failed to delete password", "error");
+    }
   };
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const copyText = (text) => {
+    navigator.clipboard.writeText(text);
+    notify("Copied to clipboard");
   };
+
+  const toggleRowPassword = (id) => {
+    setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+
+
 
   return (
-    <>
-      <div
-        className="min-h-screen flex flex-col justify-between bg-cover bg-center"
-        style={{ backgroundImage: "url('/bg2.jpg')" }}
-      >
-        <ToastContainer />
-
-        <div className="btn flex justify-center mt-12 text-purple-500 text-3xl font-bold">
-          #<span className="text-white">Pass</span>PRO
-        </div>
-        <div className="flex justify-center text-white mb-4">
-          Your own Password Manager
-        </div>
-
-        <div className="container mx-auto">
-          <div className="text-white flex flex-col gap-3 p-4">
+    <div
+      className="min-h-screen bg-cover bg-center flex flex-col justify-between overflow-hidden"
+      style={{ backgroundImage: "url('/bg2.jpg')" }}
+    >
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Translucent White Background */}
+        <div className="bg-white bg-opacity-80 shadow-lg rounded-lg p-6 max-w-4xl mx-auto mt-10">
+          <h1 className="text-3xl font-bold text-center mb-4">Password Manager</h1>
+          <div className="flex flex-col md:flex-row gap-4">
             <input
-              value={form.site}
-              onChange={handleChange}
-              className="border rounded-xl px-2 py-1 border-gray-950 text-black"
               type="text"
-              name="site"
-              placeholder="Enter website URL"
+              placeholder="Website"
+              value={form.site}
+              onChange={(e) => setForm({ ...form, site: e.target.value })}
+              className="border p-2 rounded w-full"
             />
-            <div className="flex">
-              <input
-                value={form.username}
-                onChange={handleChange}
-                className="border w-2/3 rounded-xl mr-12 px-2 py-1 border-gray-950 text-black"
-                type="text"
-                name="username"
-                placeholder="Enter Username"
-              />
-              <input
-                ref={ref}
-                value={form.password}
-                onChange={handleChange}
-                className="border w-1/3 rounded-xl px-2 py-1 border-gray-950 text-black"
-                type="password"
-                name="password"
-                placeholder="Enter Password"
-              />
-              <span
-                className="material-symbols-outlined mx-2 cursor-pointer text-black my-1"
-                onClick={togglePasswordVisibility}
-              >
-                {showPassword ? "visibility_off" : "visibility"}
-              </span>
-            </div>
+            <input
+              type="text"
+              placeholder="Username"
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
+              className="border p-2 rounded w-full"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="border p-2 rounded w-full"
+            />
+            <button
+              onClick={savePassword}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Save
+            </button>
           </div>
-        </div>
 
-        <div className="flex justify-center items-center">
-          <button
-            onClick={savePassword}
-            className="bg-purple-900 px-4 py-2 text-white rounded-3xl border border-black w-fit"
-          >
-            Save
-          </button>
-        </div>
-
-        <div className="passwords my-4 md:my-10 md:mx-20">
-          <h2 className="text-xl font-bold mb-5">Your passwords</h2>
-          {passwordArray.length === 0 && <div>No passwords to show</div>}
-          {passwordArray.length !== 0 && (
-            <table className="table-auto w-full rounded-md overflow-hidden">
-              <thead className="text-white bg-purple-900">
-                <tr>
-                  <th className="py-2">Site</th>
-                  <th className="py-2">Username</th>
-                  <th className="py-2">Password</th>
-                  <th className="py-2">Action</th>
-                </tr>
-              </thead>
-              <tbody className="text-black bg-purple-200">
-                {passwordArray.map((item) => (
-                  <tr key={item._id}>
-                    {" "}
-                    {/* Use _id here as key */}
-                    <td className="text-center py-2">
-                      <a
-                        href={item.site}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-blue-600"
-                      >
-                        {item.site}
-                      </a>
-                    </td>
-                    <td className="text-center py-2">{item.username}</td>
-                    <td className="text-center py-2">
-                      <span>{"*".repeat(item.password.length)}</span>
-                      <span
-                        className="material-symbols-outlined cursor-pointer hover:text-blue-600"
-                        onClick={() => copyText(item.password)}
-                      >
-                        content_copy
-                      </span>
-                    </td>
-                    <td className="text-center py-2">
-                      <span
-                        className="material-symbols-outlined cursor-pointer hover:text-blue-600"
-                        onClick={() => editPassword(item._id)}
-                      >
-                        {" "}
-                        {/* Use _id for edit */}
-                        edit
-                      </span>
-                      <span
-                        className="material-symbols-outlined cursor-pointer hover:text-blue-600"
-                        onClick={() => deletePassword(item._id)}
-                      >
-                        {" "}
-                        {/* Use _id for delete */}
-                        delete
-                      </span>
-                    </td>
+          {passwordArray.length === 0 ? (
+            <div className="text-center mt-6 text-gray-500">
+              <span className="text-4xl"><FaLock/></span>
+              <p>No saved passwords yet. Add one now!</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full mt-6 border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-purple-700">
+                    <th className="border p-2">Website</th>
+                    <th className="border p-2">Username</th>
+                    <th className="border p-2">Password</th>
+                    <th className="border p-2">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {passwordArray.map((item) => (
+                    <tr key={item._id} className="text-center">
+                      <td className="border p-2 hover:text-blue-600" > <a href={item.site} target="_blank">
+                        {item.site}
+                      </a></td>
+                      <td className="border p-2">{item.username}</td>
+                      <td className="border p-2">
+                        {visiblePasswords[item._id] ? item.password : "●●●●●●●"}
+                        <button onClick={() => toggleRowPassword(item._id)} className="ml-2">
+                          {visiblePasswords[item._id] ? <FaEye/> :<FaEyeSlash/>}
+                        </button>
+                        <button onClick={() => copyText(item.password)} className="ml-2  hover:text-blue-600">
+                          <FaClipboard/>
+                        </button>
+                      </td>
+                      <td className="border p-2">
+                        <button onClick={() => deletePassword(item._id)} className=" hover:text-blue-600">
+                          <FaTrash/>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
+          <ToastContainer />
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

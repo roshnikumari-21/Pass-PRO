@@ -6,8 +6,7 @@ const AIGenerator = () => {
     const [strongPassword, setStrongPassword] = useState('');  
 
     const generateStrongPassword = (password) => {  
-        // A very basic way to generate a stronger password  
-        // This can be improved with more complexity  
+        
         const specialChars = "!@#$%^&*()_-+=<>?";  
         if (password.length < 8) {  
             password += '1234'; // Add numbers  

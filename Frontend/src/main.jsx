@@ -7,13 +7,8 @@ import './index.css'
 const root = createRoot(document.getElementById('root'));
 
 root.render(
-<Auth0Provider
-    domain="dev-o38wkdq2bz84jrey.us.auth0.com"
-    clientId="KIiifsOvEfACShKFq0ATM2WUkncniqZU"
-    authorizationParams={{
-      redirect_uri: window.location.origin
-    }}
-  >
+
+   
     <App />
-  </Auth0Provider>,
+  
 );
