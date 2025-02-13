@@ -27,14 +27,15 @@ passrouter.get("/passwords", async (req, res) => {
   
   passrouter.delete("/passwords/:id", async (req, res) => {
     try {
-      await Password.findByIdAndDelete(req.params.id);
-      if (!deletedPassword) {
-        return res.status(404).json({ error: "Password not found" });  // ✅ Handle case where ID doesn't exist
-      }
-      res.json({ message: "Password deleted successfully" });
+        const deletedPassword = await Password.findByIdAndDelete(req.params.id);
+        if (!deletedPassword) {
+            return res.status(404).json({ error: "Password not found" });  // ✅ Handle case where ID doesn't exist
+        }
+        res.json({ message: "Password deleted successfully" });
     } catch (error) {
-      res.status(500).json({ error: "Error deleting password" });
+        res.status(500).json({ error: "Error deleting password" });
     }
-  });
+});
+
   
   export default passrouter;
